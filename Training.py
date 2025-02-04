@@ -5,7 +5,6 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import matplotlib.pyplot as plt
 import numpy as np
 import splitfolders
-import cv2
 from tensorflow.keras.applications.resnet50 import preprocess_input
 from tensorflow.keras import layers, models
 
