@@ -1,187 +1,159 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torchvision import datasets, models, transforms
 from torch.utils.data import DataLoader
-from torchvision import datasets, transforms
-import os
+import numpy as np
 from sklearn.utils.class_weight import compute_class_weight
-from torch.utils.tensorboard import SummaryWriter
-from torchvision.models import resnet50
 
-# User-configurable parameters
-BATCH_SIZE = 32  # Batch size
-EPOCHS = 50  # Number of epochs
-DATA_FOLDER = r"C:\Users\coler\PycharmProjects\DeepLearning\Bird_Image_Training"  # Path to data folder
-IMAGE_SIZE = (224, 224)  # Desired size of input images for the model
-LEARNING_RATE = 0.005
-
-# Check if GPU is available
+# Set device for training (GPU if available)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 
-# Define data augmentation and normalization transforms
-transform = transforms.Compose([
-    transforms.Resize(IMAGE_SIZE),
-    transforms.RandomHorizontalFlip(),
+# ==============================================================
+# 1. Data Loading and Preprocessing
+# ==============================================================
+# Path to the dataset folder
+dataset_root = "path_to_dataset_folder"  # Replace with your dataset folder path
+
+# Define data transformations
+train_transforms = transforms.Compose([
+    transforms.Resize((224, 224)),  # Resize to match input size of pre-trained model
+    transforms.RandomHorizontalFlip(),  # Data augmentation (horizontal flips)
+    transforms.RandomRotation(10),  # Slight random rotations
+    transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),
     transforms.ToTensor(),
-    transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Normalize for ResNet
 ])
 
-# Load datasets from folders
-train_dataset = datasets.ImageFolder(os.path.join(DATA_FOLDER, "train"), transform=transform)
-val_dataset = datasets.ImageFolder(os.path.join(DATA_FOLDER, "val"), transform=transform)
-test_dataset = datasets.ImageFolder(os.path.join(DATA_FOLDER, "test"), transform=transform)
+val_test_transforms = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+])
 
-# Create DataLoaders for batching
-train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
-val_dataloader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
-test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
+# Load datasets
+train_dataset = datasets.ImageFolder(root=f"{dataset_root}/train", transform=train_transforms)
+val_dataset = datasets.ImageFolder(root=f"{dataset_root}/val", transform=val_test_transforms)
+test_dataset = datasets.ImageFolder(root=f"{dataset_root}/test", transform=val_test_transforms)
 
-# Print data info for debugging
-num_classes = len(train_dataset.classes)
-print(f"Loaded {len(train_dataset)} training samples across {num_classes} classes.")
-print(f"Loaded {len(val_dataset)} validation samples across {num_classes} classes.")
-print(f"Loaded {len(test_dataset)} testing samples across {num_classes} classes.")
+# Handle class imbalance by computing class weights
+class_counts = np.bincount([label for _, label in train_dataset.samples])
+class_weights = compute_class_weight("balanced", classes=np.unique(train_dataset.targets), y=train_dataset.targets)
+class_weights = torch.tensor(class_weights, dtype=torch.float).to(device)  # Push class weights to GPU
 
-# Calculate class weights to handle class imbalance
-class_weights = compute_class_weight(
-    class_weight='balanced',
-    classes=torch.arange(num_classes).numpy(),
-    y=torch.tensor(train_dataset.targets).numpy()
-)
-class_weights = torch.tensor(class_weights, dtype=torch.float32).to(device)
+# DataLoaders
+batch_size = 64  # Adjust depending on available GPU memory
+train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True)
+val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=4, pin_memory=True)
+test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=4, pin_memory=True)
 
-# Initialize pretrained ResNet18 and make adjustments for the number of classes
-model = resnet50(pretrained=True)
-model.fc = nn.Sequential(
-    nn.Linear(model.fc.in_features, 512),
-    nn.ReLU(),
-    nn.Dropout(p=0.5),  # Add dropout to prevent overfitting
-    nn.Linear(512, num_classes)
-)
+print(f"Number of training samples: {len(train_dataset)}")
+print(f"Number of validation samples: {len(val_dataset)}")
+print(f"Number of testing samples: {len(test_dataset)}")
+print(f"Number of classes: {len(train_dataset.classes)}")
+
+# ==============================================================
+# 2. Model Architecture (Fine-Tuning ResNet50)
+# ==============================================================
+# Load a pre-trained ResNet50 model
+model = models.resnet50(pretrained=True)
+
+# Update final fully connected layer to match the number of classes (1500)
+num_features = model.fc.in_features
+model.fc = nn.Linear(num_features, len(train_dataset.classes))  # Output size = 1500 classes
 model = model.to(device)
 
-# Define cross-entropy loss with class weights and Adam optimizer
-criterion = nn.CrossEntropyLoss(weight=class_weights)  # Use class weights
-optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
+# Define the loss function (with class weights)
+criterion = nn.CrossEntropyLoss(weight=class_weights)
 
-# Learning rate scheduler to reduce LR when validation loss plateaus
-scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
+# Optimizer
+optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-# Initialize TensorBoard to track training progress
-writer = SummaryWriter(log_dir="runs/resnet18_training")
+# Learning rate scheduler (reduces learning rate on plateau)
+scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.1, patience=2)
 
-# Early stopping parameters
+# ==============================================================
+# 3. Training Loop
+# ==============================================================
+num_epochs = 20
 best_val_accuracy = 0.0
-patience = 5
-early_stop_counter = 0
 
-# Training loop
-print("Starting training...")
-for epoch in range(EPOCHS):
+for epoch in range(num_epochs):
+    print(f"\nEpoch {epoch + 1}/{num_epochs}")
+    print("-" * 40)
+
     # Training phase
     model.train()
     running_loss = 0.0
-    correct_train = 0
-    total_train = 0
+    correct_predictions = 0
+    total_samples = 0
 
-    for batch_idx, (batch_inputs, batch_labels) in enumerate(train_dataloader):
-        batch_inputs, batch_labels = batch_inputs.to(device), batch_labels.to(device)
+    for inputs, labels in train_loader:
+        inputs, labels = inputs.to(device), labels.to(device)
 
-        # Forward pass
-        predictions = model(batch_inputs)
-        loss = criterion(predictions, batch_labels)
-
-        # Backward pass and optimization
         optimizer.zero_grad()
+        outputs = model(inputs)
+        loss = criterion(outputs, labels)
         loss.backward()
         optimizer.step()
 
-        # Update loss and accuracy
-        running_loss += loss.item()
-        predicted_classes = torch.argmax(predictions, dim=1)
-        correct_train += (predicted_classes == batch_labels).sum().item()
-        total_train += batch_labels.size(0)
+        # Statistics
+        running_loss += loss.item() * inputs.size(0)
+        _, preds = torch.max(outputs, 1)
+        correct_predictions += torch.sum(preds == labels).item()
+        total_samples += labels.size(0)
 
-        # Print per-batch progress
-        if (batch_idx + 1) % 10 == 0:
-            print(f"Epoch {epoch + 1}, Batch {batch_idx + 1}/{len(train_dataloader)}, "
-                  f"Loss: {loss.item():.4f}, Accuracy: {correct_train / total_train:.4f}")
-
-    # Calculate epoch-level training accuracy and loss
-    train_accuracy = correct_train / total_train
-    train_loss = running_loss / len(train_dataloader)
-    print(f"Epoch {epoch + 1} Training Summary: Loss: {train_loss:.4f}, Accuracy: {train_accuracy:.4f}")
-
-    # Log training metrics to TensorBoard
-    writer.add_scalar("Train/Loss", train_loss, epoch)
-    writer.add_scalar("Train/Accuracy", train_accuracy, epoch)
+    epoch_loss = running_loss / len(train_loader.dataset)
+    epoch_accuracy = correct_predictions / total_samples
+    print(f"Training Loss: {epoch_loss:.4f}, Training Accuracy: {epoch_accuracy:.4f}")
 
     # Validation phase
     model.eval()
-    running_val_loss = 0.0
-    correct_val = 0
-    total_val = 0
+    val_loss = 0.0
+    val_correct_predictions = 0
+    val_total_samples = 0
 
     with torch.no_grad():
-        for val_inputs, val_labels in val_dataloader:
-            val_inputs, val_labels = val_inputs.to(device), val_labels.to(device)
-            val_predictions = model(val_inputs)
-            loss = criterion(val_predictions, val_labels)
+        for inputs, labels in val_loader:
+            inputs, labels = inputs.to(device), labels.to(device)
 
-            running_val_loss += loss.item()
-            predicted_classes = torch.argmax(val_predictions, dim=1)
-            correct_val += (predicted_classes == val_labels).sum().item()
-            total_val += val_labels.size(0)
+            outputs = model(inputs)
+            loss = criterion(outputs, labels)
 
-    # Calculate validation accuracy and loss
-    val_accuracy = correct_val / total_val
-    val_loss = running_val_loss / len(val_dataloader)
-    print(f"Epoch {epoch + 1} Validation Summary: Loss: {val_loss:.4f}, Accuracy: {val_accuracy:.4f}")
+            val_loss += loss.item() * inputs.size(0)
+            _, preds = torch.max(outputs, 1)
+            val_correct_predictions += torch.sum(preds == labels).item()
+            val_total_samples += labels.size(0)
 
-    # Log validation metrics to TensorBoard
-    writer.add_scalar("Validation/Loss", val_loss, epoch)
-    writer.add_scalar("Validation/Accuracy", val_accuracy, epoch)
+    val_epoch_loss = val_loss / len(val_loader.dataset)
+    val_epoch_accuracy = val_correct_predictions / val_total_samples
+    print(f"Validation Loss: {val_epoch_loss:.4f}, Validation Accuracy: {val_epoch_accuracy:.4f}")
 
-    # Update learning rate using scheduler
-    scheduler.step()
+    # Save the best model
+    if val_epoch_accuracy > best_val_accuracy:
+        best_val_accuracy = val_epoch_accuracy
+        torch.save(model.state_dict(), "best_model.pth")
+        print("Best model saved!")
 
-    # Early stopping logic
-    if val_accuracy > best_val_accuracy:
-        best_val_accuracy = val_accuracy
-        early_stop_counter = 0
-        print(f"New best model found! Saving model with Validation Accuracy: {best_val_accuracy:.4f}")
-        torch.save(model.state_dict(), "best_model.pth")  # Save the best model
-    else:
-        early_stop_counter += 1
-        if early_stop_counter >= patience:
-            print("Early stopping triggered.")
-            break
+    # Update learning rate
+    scheduler.step(val_epoch_loss)
 
-# Test phase
-print("Starting evaluation on the test dataset...")
+# ==============================================================
+# 4. Testing the Model
+# ==============================================================
+print("\nTesting the model on the test dataset...")
 model.eval()
-test_loss = 0.0
-correct_test = 0
-total_test = 0
+test_correct_predictions = 0
+total_test_samples = 0
 
 with torch.no_grad():
-    for test_inputs, test_labels in test_dataloader:
-        test_inputs, test_labels = test_inputs.to(device), test_labels.to(device)
-        test_predictions = model(test_inputs)
-        loss = criterion(test_predictions, test_labels)
+    for inputs, labels in test_loader:
+        inputs, labels = inputs.to(device), labels.to(device)
+        outputs = model(inputs)
+        _, preds = torch.max(outputs, 1)
+        test_correct_predictions += torch.sum(preds == labels).item()
+        total_test_samples += labels.size(0)
 
-        test_loss += loss.item()
-        predicted_classes = torch.argmax(test_predictions, dim=1)
-        correct_test += (predicted_classes == test_labels).sum().item()
-        total_test += test_labels.size(0)
-
-# Calculate test accuracy and loss
-test_accuracy = correct_test / total_test
-test_loss = test_loss / len(test_dataloader)
-print(f"Test Loss: {test_loss:.4f}, Test Accuracy: {test_accuracy:.4f}")
-
-# Log test results to TensorBoard
-writer.add_scalar("Test/Loss", test_loss)
-writer.add_scalar("Test/Accuracy", test_accuracy)
-writer.close()
+test_accuracy = test_correct_predictions / total_test_samples
+print(f"\nTest Accuracy: {test_accuracy:.4f}")
