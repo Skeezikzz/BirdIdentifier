@@ -57,3 +57,97 @@ This project implements a **deep learning-based bird species classification syst
 ### 7. **Lxml and Pillow**
 - **Lxml** is used internally for XML parsing if required.
 - **Pillow** is used for image manipulation (like resizing) within the `ImageDataGenerator`.
+- 
+
+### **1. convert.JPEG.py**
+#### **Description**
+`convert.JPEG.py` is a utility script designed to process a dataset of images by converting them into standardized **JPEG format**. This ensures that all images in a dataset are consistent in format, making them compatible with downstream machine learning workflows like image classification. The script is especially useful when working with datasets that contain images in mixed or unsupported formats.
+#### **Features**
+1. **Directory File Processing**:
+    - The script scans the specified folder structure, including subdirectories, and identifies all image files.
+
+2. **Image Format Standardization**:
+    - Converts images of various file formats (such as PNG, BMP, or TIFF) into the **JPEG** format.
+
+3. **Image Quality Assurance**:
+    - Optionally adjusts the quality of the converted images to save disk space without significantly degrading the image quality.
+
+4. **Maintains Directory Structure**:
+    - The converted images are saved in their respective directories, preserving the original folder hierarchy.
+
+#### **Libraries Used**
+1. **Pillow**:
+    - Handles image file reading, processing, and conversion to the JPEG format.
+    - Also supports resizing, quality adjustments, and various image manipulations.
+
+2. **OS**:
+    - Used to traverse directories and manage file paths during conversion.
+
+3. **Shutil**:
+    - Helps with file copying or moving in case of necessary file relocations.
+
+  ### **2. BirdDictionary.py**
+#### **Description**
+
+`BirdDictionary.py` provides a **searchable bird dictionary** that serves as a knowledge base for bird species. It works by allowing users to query information about bird species, such as their common names, scientific names, descriptions, and other notable characteristics. This script could be integrated with the classification model as a reference tool to provide additional details about the classified species.
+#### **Features**
+1. **Predefined Bird Data**:
+    - The script contains a dictionary or JSON-based database of bird species and their attributes.
+
+2. **Integration with Classification**:
+    - Can be used as an add-on to provide details about bird species identified by the classification model.
+
+3. **Searchable by Species**:
+    - Users can query the dictionary using common names or scientific names to retrieve information.
+
+4. **Expandable**:
+    - The bird dictionary can be expanded by adding more species or additional metadata (e.g., habitat, geographic range, migration patterns).
+
+#### **Libraries Used**
+1. **JSON** _(if using a JSON file as a dictionary)_:
+    - Used to load, parse, and save the bird dictionary in a JSON format for better portability.
+
+2. **OS** _(for managing file-based dictionaries)_:
+    - Helps locate and load dictionary files dynamically.
+
+3. (Optional) **argparse**:
+    - Allows users to pass bird names via command line arguments for querying.
+  
+### **3. photoscraper.py**
+#### **Description**
+`photoscraper.py` is a web scraping tool designed to automate the process of downloading bird images from the internet. This script is particularly useful for researchers or machine learning enthusiasts who need to quickly gather visual datasets for training or testing purposes.
+#### **Features**
+1. **Automated Image Searching**:
+    - Uses web scraping to search for bird images on platforms like Google Images or Bing.
+
+2. **Bulk Image Downloading**:
+    - Downloads a specified number of images for each bird species or keyword.
+
+3. **Customizable Search Keywords**:
+    - Users can specify the bird species names or other keywords as input.
+
+4. **Image Validation**:
+    - Ensures that the downloaded files are valid images (e.g., filters out non-image files).
+    - Automatically skips duplicates.
+
+5. **Output Organization**:
+    - Saves images in structured folders corresponding to the search query (e.g., a folder for each bird species).
+
+#### **Libraries Used**
+1. **Requests**:
+    - Sends HTTP requests to fetch webpages or image URLs.
+
+2. **BeautifulSoup**:
+    - Parses the downloaded HTML to extract image URLs.
+
+3. **OS**:
+    - Used to create output directories and manage file paths.
+
+4. **Shutil**:
+    - Assists with file management and organization.
+
+5. **Pillow**:
+    - Validates downloaded content to ensure that it's an image file.
+  
+
+
