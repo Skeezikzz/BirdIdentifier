@@ -9,8 +9,8 @@ from tensorflow.keras.applications.resnet50 import preprocess_input
 from tensorflow.keras import layers, models
 
 #The two different locations of the files
-input_folder = '/Users/colerutherford/Downloads/Agricultural-crops'
-output_folder = '/Users/colerutherford/Documents/AgricultureCropsFinished'
+input_folder = r'C:\Users\coler\PycharmProjects\DeepLearning\Bird_Images_JPEG'
+output_folder = r'C:\Users\coler\PycharmProjects\DeepLearning\Bird_Images_Fixed'
 
 #splitting into 80% train, 10% test, 10% val
 split_ratio = (0.8, 0.1, 0.1)
@@ -70,9 +70,9 @@ test_data = test_datagen.flow_from_directory(
 
 from keras.applications.resnet import ResNet50
 
-weights_path = '/Users/colerutherford/Downloads/resnet50_weights_tf_dim_ordering_tf_kernels_notop.h5'
+#weights_path = r'C:\Users\coler\OneDrive\resnet50_weights_tf_dim_ordering_tf_kernels_notop.h5'
 
-base_model = ResNet50(weights=weights_path, include_top=False, input_shape = (img_size[0], img_size[1], 3))
+base_model = ResNet50(weights='imagenet', include_top=False, input_shape = (img_size[0], img_size[1], 3))
 
 
 
@@ -85,7 +85,7 @@ model = models.Sequential([
     layers.GlobalAveragePooling2D(),
     layers.Dense(128, activation='relu'),
     layers.Dropout(0.5),
-    layers.Dense(30, activation='softmax')
+    layers.Dense(504, activation='softmax')
 ])
 
 model.compile(
@@ -106,6 +106,3 @@ model.save('/Users/colerutherford/PycharmProjects/DeepLearning/model.keras')
 #evaluate the model on the test data
 test_loss, test_acc = model.evaluate(test_data)
 print('Test accuracy:', test_acc)
-
-
-
