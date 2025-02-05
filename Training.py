@@ -7,10 +7,11 @@ import numpy as np
 import splitfolders
 from tensorflow.keras.applications.resnet50 import preprocess_input
 from tensorflow.keras import layers, models
+from tensorflow.keras.optimizers import Adam
 
 #The two different locations of the files
-input_folder = r'C:\Users\coler\PycharmProjects\DeepLearning\Bird_Images_JPEG'
-output_folder = r'C:\Users\coler\PycharmProjects\DeepLearning\Bird_Images_Fixed'
+input_folder = r'C:\Users\coler\OneDrive\Desktop\birds_train_small'
+output_folder = r'C:\Users\coler\PycharmProjects\DeepLearning\Bird_Image_Training'
 
 #splitting into 80% train, 10% test, 10% val
 split_ratio = (0.8, 0.1, 0.1)
@@ -26,15 +27,16 @@ splitfolders.ratio(
 
 #image resize
 img_size = (224, 224)
-batch_size = 32
+batch_size = 16
 
 train_datagen = ImageDataGenerator(
     preprocessing_function=preprocess_input,
-    rotation_range=20,
-    width_shift_range=0.2,
-    height_shift_range=0.2,
-    shear_range=0.2,
-    zoom_range=0.2,
+    rotation_range=30,
+    width_shift_range=0.3,
+    height_shift_range=0.3,
+    shear_range=0.3,
+    zoom_range=0.3,
+    brightness_range=[0.5, 1.5],
     horizontal_flip=True,
     fill_mode='nearest'
 )
@@ -89,15 +91,15 @@ model = models.Sequential([
 ])
 
 model.compile(
-    optimizer='adam',
+    optimizer=Adam(learning_rate=1e-3),
     loss='categorical_crossentropy',
-    metrics=['accuracy']
+    metrics=['accuracy', tf.keras.metrics.TopKCategoricalAccuracy(k=5)]
 )
-
-model.fit(
-    train_data,
-    epochs=25,
-    validation_data=val_data
+with tf.device('/device:GPU:0'):
+    model.fit(
+        train_data,
+        epochs=50,
+        validation_data=val_data
 )
 
 model.save('/Users/colerutherford/PycharmProjects/DeepLearning/model.keras')

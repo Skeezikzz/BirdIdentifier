@@ -10,7 +10,7 @@ from BirdDictionary import bird_dict
 # Constants
 PROCESSED_BIRDS_FILE = 'processed_birds.txt'  # File to save processed bird URLs
 IMAGES_PER_BIRD = 10  # Number of images to download per script run
-MAX_IMAGES_PER_BIRD = 100  # Maximum number of total images for each bird
+MAX_IMAGES_PER_BIRD = 1000  # Maximum number of total images for each bird
 
 
 def fetch_image_urls(bird_name, api_key, cse_id, max_results=10, start_index=1, query=None, site=None):
