@@ -185,8 +185,8 @@ def process_birds(bird_dict, api_key, cse_id, max_images_per_bird, reset_process
 
 # Main entry (example usage, add your API keys and bird data)
 if __name__ == "__main__":
-    API_KEY = "AIzaSyDmqrNcRK3pbl8QUc24pQNMrAXakw3J65Y"  # Replace with your Google Custom Search API key
-    CSE_ID = "f22db98325c5442e8"  # Replace with your Custom Search Engine ID
+    API_KEY = ""  # Replace with your Google Custom Search API key
+    CSE_ID = ""  # Replace with your Custom Search Engine ID
 
 
 

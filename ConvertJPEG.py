@@ -9,8 +9,8 @@ def convert_images_to_jpeg(folder_path, output_folder):
     :param folder_path: Path to the folder containing images.
     :param output_folder: Path to the output folder to save converted images.
     """
-    input_path = Path(r'C:\Users\coler\PycharmProjects\DeepLearning\Bird_Images')
-    output_path = Path(r"C:\Users\coler\PycharmProjects\DeepLearning\Bird_Images_JPEG")
+    input_path = Path('') #replace with input folder
+    output_path = Path('') #replace with output folder
 
     # Create the output folder if it doesn't exist
     output_path.mkdir(parents=True, exist_ok=True)

@@ -16,7 +16,7 @@ def main():
     # 1. Data Loading and Preprocessing
     # ==============================================================
     # Path to the dataset folder
-    dataset_root = r"C:\Users\coler\PycharmProjects\DeepLearning\Bird_Image_Training"  # Replace with your dataset folder path
+    dataset_root = ""  # Replace with your dataset folder path
 
     # Define data transformations
     train_transforms = transforms.Compose([

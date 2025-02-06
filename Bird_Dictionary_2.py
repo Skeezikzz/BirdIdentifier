@@ -4,7 +4,7 @@ import re
 bird_scientific_names = []
 
 # Directory path
-directory = r"C:\Users\coler\OneDrive\Desktop\birds_train_small"
+directory = "" #replace with your directory
 
 # Check if directory exists
 if not os.path.exists(directory):
