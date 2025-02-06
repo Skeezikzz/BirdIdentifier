@@ -1,0 +1,9 @@
+### Results Summary:
+- **Training Metrics**:
+    - Training Loss: `1.7688`, Training Accuracy: `58.28%`
+
+- **Validation Metrics**:
+    - Validation Loss: `3.1539`, Validation Accuracy: `38.36%`
+
+- **Test Metrics**:
+    - Test Accuracy: `38.74%` (from unseen data)
