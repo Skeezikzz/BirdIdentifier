@@ -4,7 +4,7 @@ import re
 bird_scientific_names = []
 
 ## Directory path
-directory = "" #replace with your directory
+directory = r"C:\birds_train_small" #replace with your directory
 
 # Check if directory exists
 if not os.path.exists(directory):
@@ -13,12 +13,12 @@ if not os.path.exists(directory):
 
 # Walk through the directory
 for dirname, subdirs, filenames in os.walk(directory):
-    print(f"Currently traversing: {dirname}")  # Debug: What directory is being processed
-    print(f"Subdirectories: {subdirs}")  # Debug: List of subdirectories found
+    #print(f"Currently traversing: {dirname}")  # Debug: What directory is being processed
+    #print(f"Subdirectories: {subdirs}")  # Debug: List of subdirectories found
 
     # Process each subdirectory
     for subdir in subdirs:
-        print(f"Processing subdirectory: {subdir}")  # Debug: Current subdirectory name
+        #print(f"Processing subdirectory: {subdir}")  # Debug: Current subdirectory name
 
         # Extract scientific names based on 'bird_' prefix
         if "bird_" in subdir:
@@ -37,3 +37,6 @@ bird_scientific_names = list(dict.fromkeys(bird_scientific_names))
 
 # Print final results
 print("Bird Scientific Names:", bird_scientific_names)
+
+class_to_name = {index: name for index, name in enumerate(bird_scientific_names)}
+print(class_to_name)
