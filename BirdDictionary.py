@@ -22,7 +22,7 @@ def read_website_content(url):
         return f"Error fetching the website: {e}"
 
 
-# Example usage
+## Example usage
 website_url = "http://www.ofo.ca/site/page/view/checklist.checklist"  # Replace with your desired URL
 
 # Read and print the content of the website

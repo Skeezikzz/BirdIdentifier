@@ -7,7 +7,7 @@ from PIL import Image
 from io import BytesIO
 from BirdDictionary import bird_dict
 
-# Constants
+## Constants
 PROCESSED_BIRDS_FILE = 'processed_birds.txt'  # File to save processed bird URLs
 IMAGES_PER_BIRD = 10  # Number of images to download per script run
 MAX_IMAGES_PER_BIRD = 1000  # Maximum number of total images for each bird

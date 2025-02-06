@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 import numpy as np
 from sklearn.utils.class_weight import compute_class_weight
 
-# Set device for training (GPU if available)
+## Set device for training (GPU if available)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 

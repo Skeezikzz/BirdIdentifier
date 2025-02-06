@@ -39,7 +39,7 @@ def convert_images_to_jpeg(folder_path, output_folder):
             print(f"Skipping unsupported file: {file_path}")
 
 
-# Example usage
+## Example usage
 folder_path = r'C:\path\to\input\images'  # Replace with your folder path
 output_folder = r'C:\path\to\output\images'  # Replace with your output folder path
 convert_images_to_jpeg(folder_path, output_folder)

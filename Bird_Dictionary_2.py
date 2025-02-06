@@ -3,7 +3,7 @@ import re
 
 bird_scientific_names = []
 
-# Directory path
+## Directory path
 directory = "" #replace with your directory
 
 # Check if directory exists
