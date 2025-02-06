@@ -1,5 +1,5 @@
 ## **Key Features**
-- **Custom Deep Learning Model**: Developed using PyTorch, this model handles 1500 individual classes for classification tasks.
+- **Custom Deep Learning Model**: Developed using PyTorch, this model handles 1500 individual classes and 250,000 photos spread across for classification tasks.
 - **Training**, **validation**, and **testing** pipelines were implemented to ensure effective training and robust evaluation of the model.
 - Achieved **~58.28% training accuracy**, **~38.36% validation accuracy**, and **~38.74% test accuracy**, showcasing strong generalization capabilities for unseen data.
 - Addressed challenges related to large-scale classification, including overfitting, long training times, and model optimization.
